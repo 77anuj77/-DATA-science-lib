@@ -1,0 +1,179 @@
+# ============================================================
+# ASSIGNMENT 6 – IBM HR Analytics (Employee Attrition)
+# ============================================================
+
+# Attrition -> Employee left company (Yes/No)
+# Goal -> Predict Attrition using Logistic Regression
+# We will compare:
+# 1) Label Encoding
+# 2) One-Hot Encoding
+# 3) StandardScaler
+# 4) MinMaxScaler
+
+# ============================================================
+# Import Libraries
+# ============================================================
+
+import pandas as pd
+import numpy as np
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+
+# ============================================================
+# Section A – Data Exploration
+# ============================================================
+
+# Load dataset
+df = pd.read_csv("WA_Fn-UseC_-HR-Employee-Attrition.csv")
+
+# Display first 5 rows
+print("\nFirst 5 Rows:\n", df.head())
+
+# Dataset information
+print("\nDataset Info:\n")
+print(df.info())
+
+# Statistical summary
+print("\nStatistical Summary:\n", df.describe())
+
+# Check missing values
+print("\nMissing Values:\n", df.isnull().sum())
+
+# Count Attrition Yes/No
+print("\nAttrition Count:\n", df["Attrition"].value_counts())
+
+# ============================================================
+# Section B – Feature Separation
+# ============================================================
+
+# Separate features (X) and target (y)
+X = df.drop("Attrition", axis=1)
+y = df["Attrition"]
+
+# Convert Attrition into numerical (Yes=1, No=0)
+y = y.map({"Yes": 1, "No": 0})
+
+# Train-Test Split (Before encoding & scaling)
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# ============================================================
+# Section C – Label Encoding (Binary Columns Only)
+# ============================================================
+
+X_train_label = X_train.copy()
+X_test_label = X_test.copy()
+
+le = LabelEncoder()
+
+# Apply Label Encoding only on object columns
+for col in X_train_label.select_dtypes(include='object').columns:
+    le.fit(X_train_label[col])
+    X_train_label[col] = le.transform(X_train_label[col])
+    X_test_label[col] = le.transform(X_test_label[col])
+
+# Train Logistic Regression
+model_label = LogisticRegression(max_iter=5000)
+model_label.fit(X_train_label, y_train)
+
+# Prediction
+y_pred_label = model_label.predict(X_test_label)
+
+# Accuracy
+accuracy_label = accuracy_score(y_test, y_pred_label)
+print("\nLabel Encoding Accuracy:", accuracy_label)
+
+# ============================================================
+# Section D – One-Hot Encoding
+# ============================================================
+
+# Apply One-Hot Encoding AFTER split
+X_train_ohe = pd.get_dummies(X_train, drop_first=True)
+X_test_ohe = pd.get_dummies(X_test, drop_first=True)
+
+# Align columns (important step)
+X_train_ohe, X_test_ohe = X_train_ohe.align(X_test_ohe, join='left', axis=1, fill_value=0)
+
+# Train Logistic Regression
+model_ohe = LogisticRegression(max_iter=5000)
+model_ohe.fit(X_train_ohe, y_train)
+
+# Prediction
+y_pred_ohe = model_ohe.predict(X_test_ohe)
+
+# Accuracy
+accuracy_ohe = accuracy_score(y_test, y_pred_ohe)
+print("\nOne-Hot Encoding Accuracy:", accuracy_ohe)
+
+# ============================================================
+# Section E – Feature Scaling
+# ============================================================
+
+# ----------- Standard Scaler -----------
+
+scaler_std = StandardScaler()
+
+X_train_std = scaler_std.fit_transform(X_train_ohe)
+X_test_std = scaler_std.transform(X_test_ohe)
+
+model_std = LogisticRegression(max_iter=5000)
+model_std.fit(X_train_std, y_train)
+
+y_pred_std = model_std.predict(X_test_std)
+accuracy_std = accuracy_score(y_test, y_pred_std)
+
+print("\nStandardScaler Accuracy:", accuracy_std)
+
+
+# ----------- MinMax Scaler -----------
+
+scaler_mm = MinMaxScaler()
+
+X_train_mm = scaler_mm.fit_transform(X_train_ohe)
+X_test_mm = scaler_mm.transform(X_test_ohe)
+
+model_mm = LogisticRegression(max_iter=5000)
+model_mm.fit(X_train_mm, y_train)
+
+y_pred_mm = model_mm.predict(X_test_mm)
+accuracy_mm = accuracy_score(y_test, y_pred_mm)
+
+print("\nMinMaxScaler Accuracy:", accuracy_mm)
+
+# ============================================================
+# Section F – Comparison Table
+# ============================================================
+
+comparison = pd.DataFrame({
+    "Method": [
+        "Label Encoding",
+        "One-Hot Encoding",
+        "StandardScaler",
+        "MinMaxScaler"
+    ],
+    "Accuracy": [
+        accuracy_label,
+        accuracy_ohe,
+        accuracy_std,
+        accuracy_mm
+    ]
+})
+
+print("\nFinal Comparison Table:\n")
+print(comparison)
+
+# ============================================================
+# Conclusion
+# ============================================================
+
+print("\nConclusion:")
+print("One-Hot Encoding generally performs better than Label Encoding.")
+print("Scaling improves Logistic Regression performance.")
+print("StandardScaler usually works better for logistic regression.")
