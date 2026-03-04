@@ -10,6 +10,16 @@
                 # slow but accurate
 #churn- the employees is not with the comany or with the company
 
+
+#1. Separate X and y.....(this step include[X_train, X_test, y...] 0.2 as testsize)
+#2. Train-test split.....(this include X_trai_Label=x_trin.copy(), pd.dummiees(X_train,drop_first=True))
+#3. Fit encoder..........(only on X_train (le=LabelEncode()--->must be train[fit] in X_train_label orX_train_ohe[fit] )
+#4. Transform X_train....(then [tranform])
+#5. Transform X_test 
+#6. Train model..........(train[fit] on the trainig data (X_train_Label, y_train))
+#7. Evaluate.............(testing[.predict] on X_test_Label for predicting y_test)
+#8. Accuracy.............(based on accuracy_scor( y_test, y_pred_label)
+
 import pandas as pd
 import numpy as np
 
@@ -73,7 +83,17 @@ df_onehot.head()
 x_onehot=df_onehot.drop('Churn_Yes', axis=1)
 y_onehot=df_onehot['Churn_Yes']
 
+
 x_train, x_test, y_train, y_test= train_test_split(x_onehot,y_onehot,test_size=0.2, random_state=42)
+
+#Instead of doing this we can use the splited data which is more effciet 
+#by using this code
+X_train_ohe = pd.get_dummies(x_train, drop_first=True)
+X_test_ohe = pd.get_dummies(x_test, drop_first=True)
+
+X_train_ohe, X_test_ohe = X_train_ohe.align(
+    X_test_ohe, join='left', axis=1, fill_value=0
+)
 
 model_onehot=LogisticRegression(max_iter=8000)
 model_onehot.fit(x_train, y_train)
@@ -129,4 +149,4 @@ print(comparision_scalling)
 
 #standard scaler is used in ML-Models training but not necessary
 #standard scaler is much better as compared to minmax because for bigger
-#data it is not possible for every value to lie in 0,1
+#data it is not possible for every value to lie in 0,1₹
